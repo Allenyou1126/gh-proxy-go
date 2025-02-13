@@ -18,6 +18,8 @@ var WHITE_LIST = make([][]string, 0)
 var BLACK_LIST = make([][]string, 0)
 var PASS_LIST = make([][]string, 0)
 
+var DEBUG_MODE = false
+
 var CHUNK_SIZE = 1024 * 10
 
 func parseList(input string) [][]string {
@@ -86,7 +88,7 @@ func checkPassList(m []string) bool {
 	return checkList(m, PASS_LIST)
 }
 
-func init() {
+func loadEnv() {
 	slog.Debug("Loading dotenv.")
 	err := godotenv.Load()
 	if err != nil && !os.IsNotExist(err) {
@@ -94,6 +96,19 @@ func init() {
 		os.Exit(1)
 	}
 	slog.Debug("Environment variables loaded successfully.", "env", os.Environ())
+	if !DEBUG_MODE {
+		slog.Debug("Loading DEBUG_MODE.")
+		if v, exist := os.LookupEnv("DEBUG_MODE"); exist {
+			slog.Debug("Found DEBUG_MODE in environment.", "origin", v)
+			DEBUG_MODE = v == "1" || v == "true" || v == "True" || v == "TRUE"
+		}
+		slog.Debug("DEBUG_MODE initialized.", "DEBUG_MODE", DEBUG_MODE)
+		if DEBUG_MODE {
+			slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})))
+			loadEnv()
+			return
+		}
+	}
 	slog.Debug("Loading SERVER_HOST.")
 	if v, exist := os.LookupEnv("SERVER_HOST"); exist {
 		slog.Debug("Found SERVER_HOST in environment.", "origin", v)
@@ -168,4 +183,8 @@ func init() {
 		}
 	}
 	slog.Debug("SIZE_LIMIT initialized.", "SIZE_LIMIT", SIZE_LIMIT)
+}
+
+func init() {
+	loadEnv()
 }

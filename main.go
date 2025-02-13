@@ -48,7 +48,14 @@ func init() {
 }
 
 func main() {
+	slog.Debug("Debug mode enabled.")
+
 	slog.Debug("Creating routes.")
+	if DEBUG_MODE {
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
 	r := gin.New()
 	slog.Debug("Routes created.")
 
