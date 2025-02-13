@@ -36,7 +36,15 @@ func init() {
 }
 
 func main() {
-	r := gin.Default()
+	r := gin.New()
+	slogGinConfig := sloggin.Config{
+		WithUserAgent: true,
+		WithRequestID: true,
+		WithTraceID:   true,
+		Filters:       nil,
+	}
+	r.Use(sloggin.NewWithConfig(slog.Default(), slogGinConfig))
+	r.Use(gin.Recovery())
 	r.Any("/*path", handler)
 	err := r.Run(fmt.Sprintf("%s:%d", HOST, PORT))
 	if err != nil {
