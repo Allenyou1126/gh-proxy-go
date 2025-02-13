@@ -4,8 +4,11 @@ import (
 	"embed"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	sloggin "github.com/samber/slog-gin"
 	"io"
+	"log/slog"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 )
@@ -26,17 +29,30 @@ var (
 
 func init() {
 	// 预加载静态资源
+	slog.Debug("Loading static files.")
 	var err error
+
+	slog.Debug("Loading index.html")
 	if indexHTML, err = fs.ReadFile("static/index.html"); err != nil {
-		panic(err)
+		slog.Error("Error loading static files.")
+		os.Exit(1)
 	}
+	slog.Debug("index.html loaded.")
+
+	slog.Debug("Loading favicon.ico")
 	if iconData, err = fs.ReadFile("static/favicon.ico"); err != nil {
-		panic(err)
+		slog.Error("Error loading static files.")
+		os.Exit(1)
 	}
+	slog.Debug("favicon.ico loaded.")
 }
 
 func main() {
+	slog.Debug("Creating routes.")
 	r := gin.New()
+	slog.Debug("Routes created.")
+
+	slog.Debug("Registering middlewares.")
 	slogGinConfig := sloggin.Config{
 		WithUserAgent: true,
 		WithRequestID: true,
@@ -45,81 +61,122 @@ func main() {
 	}
 	r.Use(sloggin.NewWithConfig(slog.Default(), slogGinConfig))
 	r.Use(gin.Recovery())
+	slog.Debug("Middlewares registered.")
+
+	slog.Debug("Registering route handler.")
 	r.Any("/*path", handler)
+	slog.Debug("Route handler registered.")
+
+	slog.Debug("Launching server.")
 	err := r.Run(fmt.Sprintf("%s:%d", HOST, PORT))
 	if err != nil {
-		return
+		slog.Error("Error launching server.")
+		os.Exit(1)
 	}
 }
 
 func handler(c *gin.Context) {
 	path := c.Param("path")
+	slog.Debug("Handling request.", "path", path)
+
 	if path == "/favicon.ico" {
+		slog.Debug("Getting favicon.ico")
 		c.Data(http.StatusOK, "image/vnd.microsoft.icon", iconData)
 		return
 	}
+
 	if path == "/" {
 		if q := c.Query("q"); q != "" {
+			slog.Debug("Redirecting arg q.", "q", q)
 			c.Redirect(http.StatusFound, "/"+q)
 			return
 		}
+
+		slog.Debug("Getting index.html")
 		c.Data(http.StatusOK, "text/html", indexHTML)
 		return
 	}
+
 	u := strings.TrimPrefix(path, "/")
+	slog.Debug("Preprocessing url.", "origin", u)
+
 	if !strings.HasPrefix(u, "http") {
 		u = "https://" + u
+		slog.Debug("Add https:// prefix.", "u", u)
 	}
 	if !strings.HasPrefix(u, "http://") && !strings.HasPrefix(u, "https://") {
 		u = strings.Replace(u, "s:/", "s://", 1)
+		slog.Debug("Fix scheme prefix.", "u", u)
 	}
+	slog.Debug("Preprocessing finished.", "url", u)
+
 	if m := checkURL(u); m != nil {
+		slog.Debug("Found repo in url.", "m", m)
 		if !checkWhiteList(m) {
 			c.String(http.StatusForbidden, "Forbidden by white list.")
+			slog.Debug("Forbidden by white list.")
 			return
 		}
 		if checkBlackList(m) {
 			c.String(http.StatusForbidden, "Forbidden by black list.")
+			slog.Debug("Forbidden by black list.")
 			return
 		}
 		if checkPassList(m) {
+			slog.Debug("Use pass list.")
 			handlePassList(c, u)
 			return
 		}
 	}
-	if USE_JSDELIVER_AS_MIRROR_FOR_BRANCHES {
+
+	if USE_JSDELIVR_AS_MIRROR_FOR_BRANCHES {
 		if newURL := processJsDelivr(u); newURL != "" {
+			slog.Debug("Use jsdelivr as mirror.", "new_url", newURL)
 			c.Redirect(http.StatusFound, newURL)
 			return
 		}
 	}
+
+	slog.Debug("Use proxy.")
 	proxyHandler(c, u)
 }
 
 func checkURL(u string) []string {
+	slog.Debug("Matching repos in URL.", "url", u)
 	for _, re := range []*regexp.Regexp{exp1, exp2, exp3, exp4, exp5} {
 		if matches := re.FindStringSubmatch(u); matches != nil {
+			slog.Debug("Matched in URL.", "url", u, "matches", matches)
 			return matches[1:]
 		}
 	}
+	slog.Debug("Nothing matched in URL.", "url", u)
 	return nil
 }
 
 func processJsDelivr(u string) string {
+	slog.Debug("Processing JsDelivr.", "u", u)
 	if matches := exp2.FindStringSubmatch(u); matches != nil {
-		return strings.Replace(u, "/blob/", "@", 1)
+		ret := strings.Replace(u, "/blob/", "@", 1)
+		slog.Debug("Matched blobs.", "matches", matches, "result", ret)
+		return ret
 	}
 	if matches := exp4.FindStringSubmatch(u); matches != nil {
-		return regexp.MustCompile(`(.+?/.+?)/(.+?/)`).ReplaceAllString(u, "$1@$2")
+		ret := regexp.MustCompile(`(.+?/.+?)/(.+?/)`).ReplaceAllString(u, "$1@$2")
+		slog.Debug("Matched repo rules.", "matches", matches, "result", ret)
+		return ret
 	}
+	slog.Debug("Not matched.")
 	return ""
 }
 
 func handlePassList(c *gin.Context, u string) {
 	targetURL := u + c.Request.URL.RawQuery
+	slog.Debug("Processing pass list.", "u", u, "target", targetURL)
 	if strings.HasPrefix(targetURL, "https:/") && !strings.HasPrefix(targetURL, "https://") {
 		targetURL = "https://" + targetURL[7:]
+		slog.Debug("Fix scheme prefix.", "target", targetURL)
 	}
+	slog.Debug("Redirecting.", "target", targetURL)
 	c.Redirect(http.StatusFound, targetURL)
 }
 
@@ -184,6 +241,7 @@ func proxyHandler(c *gin.Context, targetURL string) {
 }
 
 func copyHeaders(dst, src http.Header) {
+	slog.Debug("Copying headers.", "src", src)
 	for k, vv := range src {
 		if k == "Host" {
 			continue
@@ -192,4 +250,5 @@ func copyHeaders(dst, src http.Header) {
 			dst.Add(k, v)
 		}
 	}
+	slog.Debug("Headers copied.", "dst", dst)
 }
