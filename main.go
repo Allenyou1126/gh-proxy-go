@@ -105,18 +105,6 @@ func checkURL(u string) []string {
 	return nil
 }
 
-func matchRule(m, rule []string) bool {
-	for i, part := range rule {
-		if i >= len(m) {
-			return false
-		}
-		if part != "*" && m[i] != part {
-			return false
-		}
-	}
-	return true
-}
-
 func processJsDelivr(u string) string {
 	if matches := exp2.FindStringSubmatch(u); matches != nil {
 		return strings.Replace(u, "/blob/", "@", 1)

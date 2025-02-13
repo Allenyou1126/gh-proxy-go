@@ -40,6 +40,22 @@ func parseList(input string) [][]string {
 	return result
 }
 
+func matchRule(m, rule []string) bool {
+	slog.Debug("Matching rules for ", "m", m, "rule", rule)
+	for i, part := range rule {
+		if i >= len(m) {
+			slog.Debug("Not matched.")
+			return false
+		}
+		if part != "*" && m[i] != part {
+			slog.Debug("No wildcard found and not matched.")
+			return false
+		}
+	}
+	slog.Debug("Matched.")
+	return true
+}
+
 func checkList(m []string, list [][]string) bool {
 	slog.Debug("Matching rules", "m", m, "list", list)
 	for _, rule := range list {
