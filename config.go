@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-var USE_JSDELIVER_AS_MIRROR_FOR_BRANCHES = false
+var USE_JSDELIVR_AS_MIRROR_FOR_BRANCHES = false
 var SIZE_LIMIT int64 = 1024 * 1024 * 1024 * 999
 
 var HOST = "127.0.0.1"
