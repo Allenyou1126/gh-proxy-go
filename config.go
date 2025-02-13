@@ -20,6 +20,8 @@ var PASS_LIST = make([][]string, 0)
 
 var DEBUG_MODE = false
 
+var SKIP_TLS_VERIFYING = false
+
 var CHUNK_SIZE = 1024 * 10
 
 func parseList(input string) [][]string {
@@ -150,6 +152,12 @@ func loadEnv() {
 		USE_JSDELIVR_AS_MIRROR_FOR_BRANCHES = v == "1" || v == "true" || v == "True" || v == "TRUE"
 	}
 	slog.Debug("JSDELIVR_MIRROR initialized.", "JSDELIVR_MIRROR", USE_JSDELIVR_AS_MIRROR_FOR_BRANCHES)
+	slog.Debug("Loading SKIP_TLS_VERIFYING.")
+	if v, exist := os.LookupEnv("SKIP_TLS_VERIFYING"); exist {
+		slog.Debug("Found SKIP_TLS_VERIFYING in environment.", "origin", v)
+		SKIP_TLS_VERIFYING = v == "1" || v == "true" || v == "True" || v == "TRUE"
+	}
+	slog.Debug("SKIP_TLS_VERIFYING initialized.", "SKIP_TLS_VERIFYING", SKIP_TLS_VERIFYING)
 	slog.Debug("Loading SIZE_LIMIT.")
 	if v, exist := os.LookupEnv("SIZE_LIMIT"); exist {
 		slog.Debug("Found SIZE_LIMIT in environment.", "origin", v)

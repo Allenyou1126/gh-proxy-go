@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"embed"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -191,6 +192,9 @@ func proxyHandler(c *gin.Context, targetURL string) {
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
+		},
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: SKIP_TLS_VERIFYING},
 		},
 	}
 
