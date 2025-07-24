@@ -1,12 +1,16 @@
 # gh-proxy-go
 
-*A golang fork of [hunshcn/gh-proxy](https://github.com/hunshcn/gh-proxy).*
+_A golang fork of [hunshcn/gh-proxy](https://github.com/hunshcn/gh-proxy)._
 
 ## Build
 
 You can just clone this repo and prepare a golang development environment with golang version >= 1.22, then just run `go build` to get the binary file.
 
 You can also use `docker build . -t [tag_name]` to build an docker image.
+
+`ghcr.io/Allenyou1126/gh-proxy-go:[latest-version]` is also available now.
+
+Currently, `1.1.0` is the latest version.
 
 ## Use
 
@@ -19,7 +23,7 @@ Also, you can use environment variables or `.env` file to change some configurat
 ## Configuration
 
 | Configuration      | Description                                                                                                                 | Acceptable value                                                                                                                                                                              | Default value |
-|--------------------|-----------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
 | DEBUG_MODE         | Control whether to enable debug mode.                                                                                       | `1` or `true` or `True` or `TRUE` for enable, and other values for disable                                                                                                                    | `false`       |
 | JSDELIVR_MIRROR    | Control whether to use JsDelivr as the mirror, rather than run a proxy provided by this application.                        | `1` or `true` or `True` or `TRUE` for enable, and other values for disable                                                                                                                    | `false`       |
 | SKIP_TLS_VERIFYING | Control whether to skip tls verifying. Enable it to solve "x509: certificate signed by unknown authority" in docker.        | `1` or `true` or `True` or `TRUE` for enable, and other values for disable                                                                                                                    | `false`       |
